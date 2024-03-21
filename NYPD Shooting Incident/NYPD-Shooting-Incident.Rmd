@@ -1,0 +1,74 @@
+---
+title: "NYPD shooting report data visualization and analysis"
+author: "Kevin Juandi"
+date: "2024-03-16"
+output: html_document
+---
+
+# Installing Libraries
+
+```{r, eval=FALSE, echo=TRUE}
+#install.packages("tidyverse")
+#install.packages("lubridate")
+#install.packages("ggplot2")
+#install.packages("repr")
+```
+
+# Loading Libraries
+
+```{r setup, echo=TRUE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse, warn.conflicts = FALSE)
+library(lubridate, warn.conflicts = FALSE)
+library(ggplot2, warn.conflicts = FALSE)
+library(repr, warn.conflicts = FALSE)
+options(repr.plot.width=10, repr.plot.height=8)
+options(dplyr.summarise.inform = FALSE)
+```
+
+# Loading Data
+
+```{r, echo=TRUE}
+url_NYPD <- "https://data.cityofnewyork.us/api/views/833y-fsy8/rows.csv?accessType=DOWNLOAD"
+NYPD <- read.csv(url_NYPD)
+```
+
+# EDA
+Let's start with simple EDA
+
+```{r, echo=TRUE}
+head(NYPD, 10)
+```
+
+There seems to be a lot of blanks
+
+```{r, echo=TRUE}
+sapply(NYPD, function(x) sum(is.na(x)))
+```
+
+```{r, echo=TRUE}
+summary(NYPD)
+```
+
+# Graph Plots
+
+```{r, echo=TRUE}
+NYPD_clean <- NYPD %>%
+    select(c("OCCUR_DATE","OCCUR_TIME","BORO","PRECINCT",
+             "STATISTICAL_MURDER_FLAG","PERP_RACE","VIC_AGE_GROUP","VIC_SEX","VIC_RACE")) %>%
+    mutate(OCCUR_DATE = mdy(OCCUR_DATE),
+           OCCUR_TIME = hms(OCCUR_TIME),
+           STATISTICAL_MURDER_FLAG = as.logical(STATISTICAL_MURDER_FLAG),
+           Shootings = 1,
+           Year = year(OCCUR_DATE))
+
+NYPD_clean %>%
+    ggplot(aes(x = BORO, fill = BORO)) +
+    geom_bar() +
+    labs(title = "NYPD Shootings Incidents by Borough",
+         subtitle = "(2006 - 2021)",
+         x = "NYC Boroughs",
+         y = "Total Number of Shootings",
+         caption = "(Figure - 1)")
+```
+
