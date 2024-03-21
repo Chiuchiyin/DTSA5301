@@ -72,3 +72,18 @@ NYPD_clean %>%
          caption = "(Figure - 1)")
 ```
 
+```{r, echo=TRUE}
+NYPD_clean %>%
+    ggplot(aes(x = Year)) +
+    geom_bar(fill = "lightblue",show.legend = FALSE) +
+    labs(title = "NYPD Shootings Incidents by Year",
+         x = "Years (2006 - 2021)",
+         y = "Total Number of Shootings",
+         caption = "(Figure - 2)")
+```
+
+
+
+
+
+
