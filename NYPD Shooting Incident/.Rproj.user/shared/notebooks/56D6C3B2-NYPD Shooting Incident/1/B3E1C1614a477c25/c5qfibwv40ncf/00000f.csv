@@ -1,0 +1,2 @@
+"0","url_NYPD <- ""https://data.cityofnewyork.us/api/views/833y-fsy8/rows.csv?accessType=DOWNLOAD"""
+"0","NYPD <- read.csv(url_NYPD)"

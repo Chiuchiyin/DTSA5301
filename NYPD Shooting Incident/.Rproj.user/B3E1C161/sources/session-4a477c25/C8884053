@@ -1,0 +1,29 @@
+{
+    "id": "C8884053",
+    "path": "~/Github/DTSA5301/NYPD Shooting Incident/NYPD Shooting Incident.Rmd",
+    "project_path": "NYPD Shooting Incident.Rmd",
+    "type": "r_markdown",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1711049208448.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "rmdVisualMode": "false",
+        "rmdVisualCollapsedChunks": "",
+        "cursorPosition": "10,36",
+        "scrollLine": "0",
+        "last_setup_crc32": "4a477c259e735f74"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1711049208,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1711049950270,
+    "read_only": false,
+    "read_only_alternatives": []
+}
