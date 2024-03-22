@@ -242,7 +242,25 @@ It's rather unsurprising that we have more incident at night to the wee hours
 Are there racial bias?
 
 ```{r, echo=TRUE}
-736/ sum(NYPD_boro_total$Shootings)
+NYPD_clean %>%
+    ggplot(aes(x = VIC_RACE, fill = VIC_RACE)) +
+    geom_bar() +
+    labs(title = "NYPD Shootings Incidents by Race of Victims",
+         subtitle = "(2006 - 2021)",
+         x = "Victim Race",
+         y = "Total Number of Shootings",
+         caption = "(Figure - 9)")
 ```
 
+```{r, echo=TRUE}
+NYPD_clean %>%
+    ggplot(aes(x = PERP_RACE, fill = PERP_RACE)) +
+    geom_bar() +
+    labs(title = "NYPD Shootings Incidents by Race of Perpetrator",
+         subtitle = "(2006 - 2021)",
+         x = "Perp Race",
+         y = "Total Number of Shootings",
+         caption = "(Figure - 10)")
+```
 
+It seems like Afro-American made up significant amount of the data which worth more investigation but I shall stop here before stepping into more sensitive topic.
