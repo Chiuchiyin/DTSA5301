@@ -5,6 +5,8 @@ date: "2024-03-22"
 output: html_document
 ---
 
+In this work, I will try to understand how case numbers change over time and use this to predict the number of cases in the future.
+
 # Installing Libraries
 
 ```{r, eval=FALSE, echo=TRUE}
@@ -38,31 +40,33 @@ This data is the list of COVID-19 cases by country and province. I will use thre
 death_global_data =
   read.csv(file = paste(
     'https://github.com/CSSEGISandData/COVID-19',
-    'tree/master/csse_covid_19_data/csse_covid_19_time_series',
+    'raw/master/csse_covid_19_data/csse_covid_19_time_series',
     'time_series_covid19_deaths_global.csv',
     sep = '/'))
 confirmed_global_data =
   read.csv(file = paste(
     'https://github.com/CSSEGISandData/COVID-19',
-    'tree/master/csse_covid_19_data/csse_covid_19_time_series',
+    'raw/master/csse_covid_19_data/csse_covid_19_time_series',
     'time_series_covid19_confirmed_global.csv',
     sep = '/'
   ))
 recovered_global_data =
   read.csv(file = paste(
     'https://github.com/CSSEGISandData/COVID-19',
-    'tree/master/csse_covid_19_data/csse_covid_19_time_series',
+    'raw/master/csse_covid_19_data/csse_covid_19_time_series',
     'time_series_covid19_recovered_global.csv',
     sep = '/'
   ))
 
 ```
 
-# Cleaning the data
+# Preprocessing the data
+This will take pretty long time due to the size of the data.
+
 ```{r, echo=TRUE}
 tidy_data <- function(data) {
   result <- data %>%
-    pivot_longer(cols = -c(`Province/State`, `Country/Region`, Lat, Long),
+    pivot_longer(cols = -c(`Province.State`, `Country.Region`, Lat, Long),
                  names_to = 'Date',
                  values_to = 'Cases') %>%
     select(-c(Lat, Long)) %>%
@@ -90,4 +94,109 @@ global <- death_global_data_tidy %>%
 ```
 
 Here I've converted the date columns to rows and then grouped by date. I've also added a column for the number of cases.
+
 Three datasets were joined together to create a single dataset.
+
+```{r, echo=TRUE}
+head(global, 10)
+```
+
+# Visualization of data
+## Numbers of cases
+
+```{r, echo=TRUE}
+
+global %>%
+  ggplot() +
+  ylab("Cases Numbers") +
+  theme(legend.position = "none") +
+  scale_y_sqrt(labels = scales::unit_format(unit = "M", scale = 1e-6)) +
+  geom_point(aes(Date, Deaths, colour = 'Red')) +
+  geom_point(aes(Date, Confirmed), colour = 'Gray') +
+  geom_point(aes(Date, Recovered), colour = 'Green')
+
+```
+Red - deaths, Gray - confirmed, Green - recovered.
+
+Here we can see how the number of cases change over time. Unfortunately, recovered cases data is missing after the mid of 2021.
+
+## Numbers for first 6 month
+
+```{r, echo=TRUE}
+global %>%
+  filter(Date < '2020-07-01') %>%
+  ggplot() +
+  ylab("Cases Numbers") +
+  theme(legend.position = "none") +
+  scale_y_sqrt(labels = scales::unit_format(unit = "M", scale = 1e-6)) +
+  geom_point(aes(Date, Deaths, colour = 'Red')) +
+  geom_point(aes(Date, Confirmed), colour = 'Grey') +
+  geom_point(aes(Date, Recovered), colour = 'Green')
+
+```
+
+This graph shows first 6 month of pandemic.
+
+## The trends for cases numbers
+
+```{r, echo=TRUE}
+global %>%
+  filter(Date < '2021-08-01') %>%
+  mutate(trendDeaths = ifelse(is.na(lag(Deaths)), 0, Deaths - lag(Deaths))) %>%
+  mutate(trendConfirmed = ifelse(is.na(lag(Confirmed)), 0, Confirmed - lag(Confirmed))) %>%
+  mutate(trendRecovered = ifelse(is.na(lag(Recovered)), 0, Recovered - lag(Recovered))) %>%
+  ggplot() +
+  theme(legend.position = "none") +
+  ylab("Cases trend") +
+  scale_y_sqrt(labels = scales::unit_format(unit = "M", scale = 1e-6)) +
+  geom_point(aes(Date, trendDeaths), colour = 'Red', na.rm = TRUE) +
+  geom_point(aes(Date, trendConfirmed), colour = 'Gray', na.rm = TRUE) +
+  geom_point(aes(Date, trendRecovered), colour = 'Green', na.rm = TRUE)
+
+```
+
+Red - deaths trend, gray - confirmed trend, green - recovered trend.
+
+This graph show the trend of new cases over time until our last recovered data. Let's take a look of the entire data for confirmed cases and confirmed deaths
+
+```{r, echo=TRUE}
+global %>%
+  mutate(trendDeaths = ifelse(is.na(lag(Deaths)), 0, Deaths - lag(Deaths))) %>%
+  mutate(trendConfirmed = ifelse(is.na(lag(Confirmed)), 0, Confirmed - lag(Confirmed))) %>%
+  ggplot() +
+  theme(legend.position = "none") +
+  ylab("Cases trend") +
+  scale_y_sqrt(labels = scales::unit_format(unit = "M", scale = 1e-6)) +
+  geom_point(aes(Date, trendDeaths), colour = 'Red', na.rm = TRUE) +
+  geom_point(aes(Date, trendConfirmed), colour = 'Gray', na.rm = TRUE)
+
+```
+
+
+# Modeling covid-19 deaths trend
+
+```{r, echo=TRUE}
+globalDeathsTrend <- global %>%
+  mutate(trendDeaths = ifelse(is.na(lag(Deaths)), Deaths, Deaths - lag(Deaths)))
+mod <- loess(trendDeaths ~ as.numeric(Date), globalDeathsTrend)
+globalDeathsTrend <- globalDeathsTrend %>%
+  mutate(predictedDeathsTrend = predict(mod))
+
+globalDeathsTrend %>%
+  ggplot() +
+  ylab("Predicted Deaths Trend") +
+  theme(legend.position = "none") +
+  geom_point(aes(Date, trendDeaths), colour = 'Gray') +
+  geom_line(aes(Date, predictedDeathsTrend), colour = 'Red')
+
+```
+
+Red line - deaths trend from the model, gray points - deaths trend from the data.
+
+# Conclusion
+
+The model of the death trend clearly shows that although the number of deaths has always increased, the trend is going down. This is likely due to better understanding of the pandemic and vaccine availability, reducing the number of new cases.
+
+# Biases identified
+
+It is unclear if the data collection in different countries followed the same rules/standards.
