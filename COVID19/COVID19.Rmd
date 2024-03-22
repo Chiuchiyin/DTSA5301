@@ -1,0 +1,93 @@
+---
+title: "Covid-19 study"
+author: "Kevin Juandi"
+date: "2024-03-22"
+output: html_document
+---
+
+# Installing Libraries
+
+```{r, eval=FALSE, echo=TRUE}
+#install.packages("tidyverse")
+#install.packages("lubridate")
+#install.packages("ggplot2")
+#install.packages("repr")
+```
+
+# Loading Libraries
+
+```{r setup, echo=TRUE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse, warn.conflicts = FALSE)
+library(lubridate, warn.conflicts = FALSE)
+library(ggplot2, warn.conflicts = FALSE)
+library(repr, warn.conflicts = FALSE)
+options(repr.plot.width=10, repr.plot.height=8)
+options(dplyr.summarise.inform = FALSE)
+options(warn = -1)
+```
+
+
+# Loading the Data
+
+Data Location: https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_time_series
+
+This data is the list of COVID-19 cases by country and province. I will use three files consisting of data for confirmed cases, deaths, and recoveries.
+
+```{r, echo=TRUE}
+death_global_data =
+  read.csv(file = paste(
+    'https://github.com/CSSEGISandData/COVID-19',
+    'tree/master/csse_covid_19_data/csse_covid_19_time_series',
+    'time_series_covid19_deaths_global.csv',
+    sep = '/'))
+confirmed_global_data =
+  read.csv(file = paste(
+    'https://github.com/CSSEGISandData/COVID-19',
+    'tree/master/csse_covid_19_data/csse_covid_19_time_series',
+    'time_series_covid19_confirmed_global.csv',
+    sep = '/'
+  ))
+recovered_global_data =
+  read.csv(file = paste(
+    'https://github.com/CSSEGISandData/COVID-19',
+    'tree/master/csse_covid_19_data/csse_covid_19_time_series',
+    'time_series_covid19_recovered_global.csv',
+    sep = '/'
+  ))
+
+```
+
+# Cleaning the data
+```{r, echo=TRUE}
+tidy_data <- function(data) {
+  result <- data %>%
+    pivot_longer(cols = -c(`Province/State`, `Country/Region`, Lat, Long),
+                 names_to = 'Date',
+                 values_to = 'Cases') %>%
+    select(-c(Lat, Long)) %>%
+    mutate(Date = mdy(substring(Date, 2, length(Date)))) %>%
+    group_by(Date) %>%
+    summarise(
+      Cases = sum(Cases),
+    )
+}
+
+death_global_data_tidy <- tidy_data(death_global_data) %>%
+  mutate(Deaths = Cases) %>%
+  select(-Cases)
+confirmed_global_data_tidy <- tidy_data(confirmed_global_data) %>%
+  mutate(Confirmed = Cases) %>%
+  select(-Cases)
+recovered_global_data_tidy <- tidy_data(recovered_global_data) %>%
+  mutate(Recovered = Cases) %>%
+  select(-Cases)
+
+global <- death_global_data_tidy %>%
+  full_join(confirmed_global_data_tidy, by = 'Date') %>%
+  full_join(recovered_global_data_tidy, by = 'Date')
+
+```
+
+Here I've converted the date columns to rows and then grouped by date. I've also added a column for the number of cases.
+Three datasets were joined together to create a single dataset.
